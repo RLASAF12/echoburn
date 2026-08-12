@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECHOBURN — Agent Failure Series #22</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0d1117;
+  --bg2: #161b22;
+  --bg3: #1c2128;
+  --bg4: #21262d;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text2: #7d8590;
+  --text3: #3d444d;
+  --red: #f85149;
+  --green: #3fb950;
+  --yellow: #d29922;
+  --blue: #58a6ff;
+  --purple: #bc8cff;
+  --orange: #ffa657;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  height: 100%;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+/* ─── HEADER ─── */
+.header {
+  border-bottom: 1px solid var(--border);
+  padding: 14px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg2);
+  flex-shrink: 0;
+}
+.badge {
+  font-size: 10px;
+  color: var(--text2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+h1 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--red);
+  letter-spacing: -0.01em;
+}
+.tagline {
+  font-size: 11px;
+  color: var(--text2);
+  margin-top: 2px;
+  font-style: italic;
+}
+.meta {
+  text-align: right;
+  font-size: 11px;
+  color: var(--text2);
+  line-height: 1.7;
+}
+
+/* ─── CONTROLS ─── */
+.controls {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 22px;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.ctrl-group { display: flex; align-items: center; gap: 8px; }
+.ctrl-label {
+  font-size: 10px;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+/* Toggle */
+.toggle { position: relative; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-track {
+  width: 36px; height: 20px; background: var(--border); border-radius: 10px;
+  transition: background 0.2s; position: relative;
+}
+.toggle-track::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 16px; height: 16px; background: var(--text2); border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+.toggle input:checked + .toggle-track { background: var(--green); }
+.toggle input:checked + .toggle-track::after { transform: translateX(16px); background: #fff; }
+.toggle-val { font-size: 11px; font-weight: 700; }
+
+/* Retry select */
+select {
+  background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+  padding: 4px 8px; border-radius: 4px; font-family: inherit; font-size: 11px; cursor: pointer;
+}
+
+/* Buttons */
+.btn {
+  padding: 7px 16px; border-radius: 6px; font-family: inherit; font-size: 11px;
+  font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em;
+  border: none; transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.82; }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-run { background: var(--green); color: #000; }
+.btn-reset { background: var(--bg4); color: var(--text); border: 1px solid var(--border); }
+
+/* ─── 3-PANEL MAIN ─── */
+.main {
+  display: grid;
+  grid-template-columns: 1fr 300px 1fr;
+  height: calc(100vh - 130px);
+  overflow: hidden;
+}
+.panel {
+  display: flex; flex-direction: column; overflow: hidden;
+  border-right: 1px solid var(--border);
+}
+.panel:last-child { border-right: none; }
+.panel-hdr {
+  padding: 8px 14px; background: var(--bg3); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 7px; flex-shrink: 0;
+}
+.dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.panel-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text2); }
+
+/* ─── LOG ENTRIES ─── */
+.log-body { flex: 1; overflow-y: auto; padding: 10px 12px; }
+.log-entry {
+  padding: 3px 7px; margin-bottom: 2px; border-radius: 3px;
+  font-size: 11px; display: flex; gap: 8px;
+  animation: fadein 0.25s ease;
+}
+@keyframes fadein { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:none; } }
+.lt { color: var(--text3); flex-shrink:0; width: 44px; font-size:10px; }
+.lm { flex:1; word-break: break-all; }
+.log-info  { color: var(--text); }
+.log-act   { background: rgba(88,166,255,.07); color: var(--blue); }
+.log-warn  { background: rgba(210,153,34,.07); color: var(--yellow); }
+.log-err   { background: rgba(248,81,73,.07); color: var(--red); }
+.log-ok    { background: rgba(63,185,80,.07); color: var(--green); }
+code { background: rgba(255,255,255,.07); padding: 0 3px; border-radius: 2px; font-family: inherit; }
+
+/* ─── NETWORK PANEL ─── */
+.net-body { flex: 1; overflow-y: auto; padding: 10px 10px; }
+.attempt-block {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+  margin-bottom: 8px; overflow: hidden; animation: fadein 0.25s ease;
+}
+.ab-header {
+  padding: 7px 12px; display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.ab-label { font-size: 10px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; }
+.ab-status {
+  font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 8px;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.st-pending { background: rgba(125,133,144,.12); color: var(--text2); }
+.st-firing  { background: rgba(88,166,255,.12); color: var(--blue); }
+.st-timeout { background: rgba(248,81,73,.12); color: var(--red); }
+.st-success { background: rgba(63,185,80,.12); color: var(--green); }
+.st-dedup   { background: rgba(188,140,255,.12); color: var(--purple); }
+.ab-body { padding: 8px 12px; font-size: 11px; color: var(--text2); line-height: 1.7; }
+
+/* Arrow viz */
+.arrow-row {
+  display: flex; align-items: center; gap: 6px; margin: 3px 0;
+  font-size: 11px;
+}
+.ar-label { width: 42px; font-size: 10px; color: var(--text3); flex-shrink: 0; }
+.ar-line {
+  flex: 1; height: 2px; border-radius: 1px; background: var(--border);
+  position: relative; overflow: hidden;
+}
+.ar-line::after {
+  content: '';
+  position: absolute; top: 0; left: -100%; height: 100%;
+  width: 100%; background: currentColor;
+  animation: slidein 0.5s ease forwards;
+}
+@keyframes slidein { to { left: 0; } }
+.ar-req { color: var(--blue); }
+.ar-res-ok { color: var(--green); }
+.ar-res-timeout { color: var(--red); }
+.ar-res-dedup { color: var(--purple); }
+.ar-arrow { font-size: 12px; flex-shrink: 0; }
+
+/* ─── STRIPE PANEL ─── */
+.stripe-summary {
+  padding: 10px 14px; background: var(--bg3); border-bottom: 1px solid var(--border);
+  flex-shrink: 0; display: none;
+}
+.stripe-total-lbl { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 2px; }
+.stripe-total { font-size: 22px; font-weight: 800; }
+.stripe-total.overcharged { color: var(--red); }
+.stripe-total.correct { color: var(--green); }
+.stripe-count { font-size: 11px; color: var(--text2); margin-top: 1px; }
+
+.charge-item {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  border: 1px solid var(--border); border-radius: 5px; margin-bottom: 5px;
+  animation: fadein 0.25s ease;
+}
+.charge-item.real { border-color: rgba(248,81,73,.3); background: rgba(248,81,73,.04); }
+.charge-item.deduped { border-color: rgba(188,140,255,.25); background: rgba(188,140,255,.03); opacity:.8; }
+.charge-left { flex: 1; }
+.charge-id { font-size: 10px; color: var(--text2); }
+.charge-meta { font-size: 10px; color: var(--text3); margin-top: 1px; }
+.charge-amount { font-size: 13px; font-weight: 700; flex-shrink:0; }
+.charge-item.real .charge-amount { color: var(--red); }
+.charge-item.deduped .charge-amount { color: var(--purple); text-decoration: line-through; }
+.charge-badge {
+  font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 3px;
+  text-transform: uppercase; letter-spacing: 0.06em; flex-shrink:0;
+}
+.badge-real { background: rgba(248,81,73,.18); color: var(--red); }
+.badge-dedup { background: rgba(188,140,255,.18); color: var(--purple); }
+
+/* ─── VERDICT BAR ─── */
+.verdict {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--bg2); border-top: 2px solid var(--border);
+  padding: 10px 22px; display: none; gap: 12px; align-items: stretch;
+  animation: slideup 0.3s ease;
+  z-index: 100;
+}
+@keyframes slideup { from { transform: translateY(100%); } to { transform: none; } }
+.verdict.show { display: flex; }
+.vc {
+  padding: 10px 14px; border-radius: 6px; flex: 1;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.vc-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; }
+.vc-value { font-size: 18px; font-weight: 800; }
+.vc-sub { font-size: 10px; color: var(--text2); }
+.vc-agent { background: rgba(63,185,80,.07); border: 1px solid rgba(63,185,80,.2); }
+.vc-reality { background: rgba(248,81,73,.07); border: 1px solid rgba(248,81,73,.2); }
+.vc-fixed { background: rgba(88,166,255,.07); border: 1px solid rgba(88,166,255,.2); }
+.vc-explain {
+  flex: 2; font-size: 11px; color: var(--text2); line-height: 1.65;
+  display: flex; align-items: center;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.placeholder {
+  color: var(--text3); text-align: center; margin-top: 48px; font-size: 11px; line-height: 1.8;
+}
+
+.footer-strip {
+  position: fixed; bottom: 0; right: 18px;
+  font-size: 10px; color: var(--text3); padding: 3px;
+  pointer-events: none; z-index: 99;
+}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══════════════════════════════════════════════════════════ -->
+<div class="header">
+  <div>
+    <div class="badge">Agent Failure Series — #22</div>
+    <h1>ECHOBURN</h1>
+    <div class="tagline">"The retry was successful. So was the original. So were all the others."</div>
+  </div>
+  <div class="meta">
+    <div>Failure: Idempotency Blindness</div>
+    <div>Layer: Agent → Tool → External API</div>
+    <div>Severity: <span style="color:var(--red)">💥 CRITICAL</span></div>
+  </div>
+</div>
+
+<!-- ══ CONTROLS ═════════════════════════════════════════════════════════ -->
+<div class="controls">
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">Idempotency Key</span>
+    <label class="toggle">
+      <input type="checkbox" id="idem-toggle" onchange="onToggleChange()">
+      <div class="toggle-track"></div>
+      <span class="toggle-val" id="idem-label" style="color:var(--red)">OFF</span>
+    </label>
+  </div>
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">Retry limit</span>
+    <select id="retry-select">
+      <option value="2">2 retries</option>
+      <option value="3" selected>3 retries</option>
+      <option value="4">4 retries</option>
+    </select>
+  </div>
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">Scenario</span>
+    <select id="scenario-select">
+      <option value="pay">Payment Charge ($99.99)</option>
+      <option value="email">Welcome Email</option>
+      <option value="order">Inventory Deduct</option>
+    </select>
+  </div>
+
+  <div style="flex:1"></div>
+
+  <button class="btn btn-run" id="run-btn" onclick="runScenario()">▶ Run Scenario</button>
+  <button class="btn btn-reset" id="reset-btn" onclick="resetAll()" style="display:none">↩ Reset</button>
+</div>
+
+<!-- ══ PANELS ═══════════════════════════════════════════════════════════ -->
+<div class="main">
+
+  <!-- LEFT: Agent Log -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <div class="dot" style="background:var(--blue)"></div>
+      <span class="panel-title">Agent Execution Log</span>
+    </div>
+    <div class="log-body" id="agent-log">
+      <div class="placeholder">
+        Configure settings above<br>then click ▶ Run Scenario
+      </div>
+    </div>
+  </div>
+
+  <!-- MIDDLE: Network -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <div class="dot" style="background:var(--yellow)"></div>
+      <span class="panel-title">Network / API Layer</span>
+    </div>
+    <div class="net-body" id="net-vis">
+      <div class="placeholder">
+        API call timeline<br>will appear here
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Stripe / API Provider log -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <div class="dot" style="background:var(--green)"></div>
+      <span class="panel-title" id="stripe-panel-title">Stripe — Payment Ledger</span>
+    </div>
+    <div class="stripe-summary" id="stripe-summary">
+      <div class="stripe-total-lbl">Total Actually Charged</div>
+      <div class="stripe-total" id="stripe-total">$0.00</div>
+      <div class="stripe-count" id="stripe-count">0 charges</div>
+    </div>
+    <div class="log-body" id="stripe-log">
+      <div class="placeholder">
+        Provider-side events<br>will appear here
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ VERDICT ══════════════════════════════════════════════════════════ -->
+<div class="verdict" id="verdict">
+  <div class="vc vc-agent">
+    <div class="vc-label">Agent Reports</div>
+    <div class="vc-value" style="color:var(--green)" id="v-agent-val">—</div>
+    <div class="vc-sub" id="v-agent-sub">—</div>
+  </div>
+  <div class="vc" id="v-reality-card">
+    <div class="vc-label" id="v-reality-lbl">Customer Actually Charged</div>
+    <div class="vc-value" id="v-reality-val">—</div>
+    <div class="vc-sub" id="v-reality-sub">—</div>
+  </div>
+  <div class="vc-explain" id="v-explain"></div>
+</div>
+
+<div class="footer-strip" id="footer-strip">Agent Failure Series #22 · ECHOBURN</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════ */
+let running = false;
+let startTs = 0;
+let realChargesCount = 0;
+let totalCharged = 0;
+
+/* Scenario configs */
+const SCENARIOS = {
+  pay: {
+    action: 'Process checkout',
+    tool: 'stripe_charge',
+    params: 'customer="CX-4421", amount=99.99, currency="USD"',
+    amount: 99.99,
+    unit: '$',
+    apiName: 'Stripe',
+    successResp: '{"id":"ch_XXXX","amount":9999,"status":"succeeded"}',
+    dupEffect: 'customer charged twice',
+    stripeTitle: 'Stripe — Payment Ledger',
+    chargeLabel: 'CHARGED',
+    dupLabel: 'DEDUP'
+  },
+  email: {
+    action: 'Send onboarding email to new user',
+    tool: 'sendgrid_send',
+    params: 'to="user@example.com", template="welcome_v3"',
+    amount: 1,
+    unit: '×',
+    apiName: 'SendGrid',
+    successResp: '{"message_id":"msg_XXXX","status":"sent"}',
+    dupEffect: 'inbox flooded with duplicates',
+    stripeTitle: 'SendGrid — Email Log',
+    chargeLabel: 'SENT',
+    dupLabel: 'DEDUP'
+  },
+  order: {
+    action: 'Fulfill order — deduct from inventory',
+    tool: 'inventory_deduct',
+    params: 'sku="PROD-881", qty=1, warehouse="US-EAST"',
+    amount: 1,
+    unit: '×',
+    apiName: 'Inventory API',
+    successResp: '{"deduction_id":"ded_XXXX","sku":"PROD-881","remaining":41}',
+    dupEffect: 'stock count corrupted',
+    stripeTitle: 'Inventory API — Mutation Log',
+    chargeLabel: 'DEDUCTED',
+    dupLabel: 'DEDUP'
+  }
+};
+
+/* ═══════════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════════ */
+function $id(id) { return document.getElementById(id); }
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function elapsed() { return ((Date.now() - startTs) / 1000).toFixed(1) + 's'; }
+function randId(prefix) { return prefix + Math.random().toString(36).substr(2, 9); }
+function scrollBot(el) { el.scrollTop = el.scrollHeight; }
+
+function onToggleChange() {
+  const on = $id('idem-toggle').checked;
+  const lbl = $id('idem-label');
+  lbl.textContent = on ? 'ON' : 'OFF';
+  lbl.style.color = on ? 'var(--green)' : 'var(--red)';
+}
+
+/* ── AGENT LOG ─────────────────────────────────────────── */
+function agentLog(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `log-entry log-${type}`;
+  el.innerHTML = `<span class="lt">${elapsed()}</span><span class="lm">${msg}</span>`;
+  $id('agent-log').appendChild(el);
+  scrollBot($id('agent-log'));
+}
+
+/* ── NETWORK PANEL ─────────────────────────────────────── */
+function addAttemptBlock(num) {
+  const block = document.createElement('div');
+  block.className = 'attempt-block';
+  block.id = `ab-${num}`;
+  block.innerHTML = `
+    <div class="ab-header">
+      <span class="ab-label">Attempt ${num}</span>
+      <span class="ab-status st-pending" id="abs-${num}">PENDING</span>
+    </div>
+    <div class="ab-body" id="ab-body-${num}">
+      <span style="color:var(--text3)">Waiting to fire...</span>
+    </div>`;
+  $id('net-vis').appendChild(block);
+  scrollBot($id('net-vis'));
+}
+
+function setAttemptStatus(num, status) {
+  const el = $id(`abs-${num}`);
+  if (!el) return;
+  const map = {
+    firing: ['st-firing', '⟳ FIRING'],
+    timeout: ['st-timeout', '⏱ TIMEOUT'],
+    success: ['st-success', '✓ SUCCESS'],
+    dedup:   ['st-dedup',   '◈ DEDUP']
+  };
+  el.className = `ab-status ${map[status][0]}`;
+  el.textContent = map[status][1];
+}
+
+function setAttemptBody(num, html) {
+  const el = $id(`ab-body-${num}`);
+  if (el) el.innerHTML = html;
+}
+
+/* ── STRIPE / PROVIDER LOG ─────────────────────────────── */
+function addCharge(attemptNum, isDedup, sc) {
+  const chargeId = randId('ch_');
+  const el = document.createElement('div');
+  el.className = `charge-item ${isDedup ? 'deduped' : 'real'}`;
+
+  if (isDedup) {
+    el.innerHTML = `
+      <div class="charge-left">
+        <div class="charge-id">${chargeId}</div>
+        <div class="charge-meta">◈ Idempotency hit — returned cached result (no new action)</div>
+      </div>
+      <span class="charge-amount">${sc.unit}${sc.amount.toFixed ? sc.amount.toFixed(2) : sc.amount}</span>
+      <span class="charge-badge badge-dedup">${sc.dupLabel}</span>`;
+  } else {
+    realChargesCount++;
+    totalCharged += sc.amount;
+    el.innerHTML = `
+      <div class="charge-left">
+        <div class="charge-id">${chargeId}</div>
+        <div class="charge-meta">Attempt ${attemptNum} · ${elapsed()}</div>
+      </div>
+      <span class="charge-amount">${sc.unit}${sc.amount.toFixed ? sc.amount.toFixed(2) : sc.amount}</span>
+      <span class="charge-badge badge-real">${sc.chargeLabel}</span>`;
+    updateStripeSummary(sc);
+  }
+
+  $id('stripe-log').appendChild(el);
+  scrollBot($id('stripe-log'));
+}
+
+function updateStripeSummary(sc) {
+  $id('stripe-summary').style.display = 'block';
+  const total = sc.amount.toFixed ? totalCharged.toFixed(2) : totalCharged;
+  const totalEl = $id('stripe-total');
+  totalEl.textContent = sc.unit + total;
+  totalEl.className = `stripe-total ${realChargesCount > 1 ? 'overcharged' : 'correct'}`;
+  $id('stripe-count').textContent = `${realChargesCount} action(s) created`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESET
+═══════════════════════════════════════════════════════════ */
+function resetAll() {
+  realChargesCount = 0;
+  totalCharged = 0;
+  running = false;
+
+  $id('agent-log').innerHTML = '<div class="placeholder">Configure settings above<br>then click ▶ Run Scenario</div>';
+  $id('net-vis').innerHTML = '<div class="placeholder">API call timeline<br>will appear here</div>';
+  $id('stripe-log').innerHTML = '<div class="placeholder">Provider-side events<br>will appear here</div>';
+  $id('stripe-summary').style.display = 'none';
+  $id('verdict').classList.remove('show');
+  $id('run-btn').style.display = 'inline-block';
+  $id('run-btn').disabled = false;
+  $id('reset-btn').style.display = 'none';
+  $id('footer-strip').style.bottom = '0';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   VERDICT
+═══════════════════════════════════════════════════════════ */
+function showVerdict(sc, idem) {
+  const v = $id('verdict');
+  const retries = parseInt($id('retry-select').value);
+  const totalAttempts = retries + 1;
+
+  const agentClaimsAmount = sc.unit + (sc.amount.toFixed ? sc.amount.toFixed(2) : sc.amount);
+  const actualTotal = sc.unit + (sc.amount.toFixed ? (sc.amount * realChargesCount).toFixed(2) : sc.amount * realChargesCount);
+
+  $id('v-agent-val').textContent = `✅ ${agentClaimsAmount}`;
+  $id('v-agent-sub').textContent = idem
+    ? `1 successful call · idempotency protected`
+    : `"1 successful call" — saw 1 response`;
+
+  const realCard = $id('v-reality-card');
+  const realVal = $id('v-reality-val');
+  const realSub = $id('v-reality-sub');
+
+  if (idem) {
+    realCard.className = 'vc vc-fixed';
+    $id('v-reality-lbl').textContent = 'Provider Actually Executed';
+    realVal.textContent = agentClaimsAmount;
+    realVal.style.color = 'var(--green)';
+    realSub.textContent = `1 real action · ${totalAttempts - 1} attempt(s) deduplicated`;
+    $id('v-explain').innerHTML = `<strong style="color:var(--green)">✓ Fixed.</strong>&nbsp;
+      Idempotency key <code>"order-8821-charge"</code> bound all retries to the first call.
+      ${sc.apiName} returned the cached result for ${totalAttempts - 1} follow-up attempt(s).
+      The agent's report is accurate — action executed exactly once.`;
+  } else {
+    realCard.className = 'vc vc-reality';
+    $id('v-reality-lbl').textContent = 'Provider Actually Executed';
+    realVal.textContent = actualTotal;
+    realVal.style.color = 'var(--red)';
+    const overcharge = sc.amount.toFixed
+      ? `$${((sc.amount * realChargesCount) - sc.amount).toFixed(2)} overcharged`
+      : `${realChargesCount - 1} extra action(s)`;
+    realSub.textContent = `${realChargesCount} real actions · ${overcharge}`;
+    $id('v-explain').innerHTML = `<strong style="color:var(--red)">✗ Silent failure.</strong>&nbsp;
+      Each timeout caused a retry, each retry hit ${sc.apiName} fresh — because no idempotency key was set.
+      ${sc.apiName} processed all ${realChargesCount} calls. The agent saw one&nbsp;<code style="color:var(--green)">200 OK</code>&nbsp;
+      and reported success. The <strong style="color:var(--red)">${sc.dupEffect}</strong>.
+      Support will find out later.`;
+  }
+
+  v.classList.add('show');
+  // Push footer strip up
+  $id('footer-strip').style.bottom = '80px';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN SCENARIO RUNNER
+═══════════════════════════════════════════════════════════ */
+async function runScenario() {
+  if (running) return;
+  running = true;
+  realChargesCount = 0;
+  totalCharged = 0;
+  startTs = Date.now();
+
+  const idem = $id('idem-toggle').checked;
+  const retryLimit = parseInt($id('retry-select').value);
+  const totalAttempts = retryLimit + 1;
+  const scenarioKey = $id('scenario-select').value;
+  const sc = SCENARIOS[scenarioKey];
+
+  // Update panel title
+  $id('stripe-panel-title').textContent = sc.stripeTitle;
+
+  // Disable run, clear panels
+  $id('run-btn').disabled = true;
+
+  $id('agent-log').innerHTML = '';
+  $id('net-vis').innerHTML = '';
+  $id('stripe-log').innerHTML = '';
+  $id('stripe-summary').style.display = 'none';
+
+  // ── STEP 1: Task intake ───────────────────────────────
+  agentLog(`Task received: ${sc.action}`, 'info');
+  await delay(350);
+  agentLog(`Routing to tool layer...`, 'info');
+  await delay(300);
+
+  if (idem) {
+    agentLog(`Generating idempotency key: <code>"order-8821-charge"</code>`, 'ok');
+    await delay(250);
+  }
+
+  agentLog(`Calling tool: <code>${sc.tool}(${sc.params}${idem ? ', idempotency_key="order-8821-charge"' : ''})</code>`, 'act');
+  await delay(400);
+
+  // ── STEP 2: Attempt loop ──────────────────────────────
+  // All attempts except the last one timeout.
+  // Last attempt always succeeds. This is deterministic for demo clarity.
+  let finalAttemptSucceeded = false;
+
+  for (let i = 1; i <= totalAttempts; i++) {
+    const isLast = i === totalAttempts;
+    const isRetry = i > 1;
+    const isDedup = idem && i > 1;  // With idempotency: only attempt 1 creates a real action
+
+    if (isRetry) {
+      const backoff = (i - 1) * 1.2;
+      agentLog(`⏳ Backoff ${backoff.toFixed(1)}s before retry ${i-1}/${retryLimit}...`, 'warn');
+      await delay(500);
+      agentLog(`Retry ${i-1}/${retryLimit} — re-calling <code>${sc.tool}()</code>`, 'warn');
+    }
+
+    // Add attempt block to network panel
+    addAttemptBlock(i);
+    await delay(200);
+    setAttemptStatus(i, 'firing');
+
+    setAttemptBody(i, `
+      <div class="arrow-row">
+        <span class="ar-label">Agent</span>
+        <span class="ar-arrow" style="color:var(--blue)">→</span>
+        <div class="ar-line ar-req"><div style="width:100%;height:100%;background:var(--blue);animation:slidein .4s ease forwards"></div></div>
+        <span class="ar-arrow" style="color:var(--blue)">→</span>
+        <span style="font-size:10px;color:var(--blue)">${sc.apiName}</span>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px">POST /v1/charges sent at ${elapsed()}</div>
+    `);
+
+    await delay(400);
+
+    // Stripe ALWAYS receives and processes — whether the response makes it back or not
+    // Schedule the charge to appear on the stripe side at the processing time
+    const chargeDelay = isLast ? 600 : 250;
+    setTimeout(() => {
+      addCharge(i, isDedup, sc);
+    }, chargeDelay);
+
+    if (!isLast) {
+      // This attempt times out
+      await delay(1500);  // simulate timeout
+
+      setAttemptStatus(i, 'timeout');
+      setAttemptBody(i, `
+        <div style="margin-bottom:4px">
+          <span style="color:var(--blue);font-size:10px">→ POST /v1/charges fired at T+${elapsed()}</span>
+        </div>
+        <div>
+          <span style="color:var(--red);font-size:10px">✗ Response timeout — no reply in 30s</span>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">
+          ${sc.apiName} received &amp; processed the call — but slow network delayed the response past the timeout window
+        </div>
+      `);
+
+      agentLog(`❌ <code>${sc.tool}()</code> timed out — 30s with no response`, 'err');
+      agentLog(`⚠ State unknown: did the action complete on ${sc.apiName}?`, 'warn');
+      if (i < totalAttempts) {
+        agentLog(`Retry policy: ${totalAttempts - i} attempt(s) remaining`, 'warn');
+      }
+    } else {
+      // This attempt succeeds
+      await delay(700);
+
+      const respId = randId('ch_');
+      const respBody = sc.successResp.replace('XXXX', respId.slice(3));
+
+      setAttemptStatus(i, isDedup ? 'dedup' : 'success');
+      setAttemptBody(i, `
+        <div style="margin-bottom:3px">
+          <span style="color:var(--blue);font-size:10px">→ POST /v1/charges fired</span>
+        </div>
+        <div>
+          <span style="color:var(--green);font-size:10px">← 200 OK received at ${elapsed()}</span>
+          ${isDedup ? '<span style="color:var(--purple);font-size:10px;margin-left:8px">◈ Cached result</span>' : ''}
+        </div>
+      `);
+
+      agentLog(`✅ <code>${sc.tool}()</code> returned 200 OK`, 'ok');
+      agentLog(`Response: <code>${respBody.replace('XXXX', respId.slice(3))}</code>`, 'ok');
+      agentLog(`✅ Task complete — action confirmed successful`, 'ok');
+      finalAttemptSucceeded = true;
+    }
+
+    await delay(300);
+  }
+
+  // ── STEP 3: Verdict ───────────────────────────────────
+  await delay(400);
+  showVerdict(sc, idem);
+
+  $id('run-btn').style.display = 'none';
+  $id('reset-btn').style.display = 'inline-block';
+  running = false;
+}
+</script>
+</body>
+</html>
