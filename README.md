@@ -1,3 +1,5 @@
+> **Archived.** This repo moved to [RLASAF12/agent-failure-lab](https://github.com/RLASAF12/agent-failure-lab/tree/main/echoburn) (folder `echoburn/`, full history preserved). Archived 2026-10-04.
+
 # ECHOBURN — Agent Failure Series #22
 
 > **Agent reports ✅ $99.99 · Bank statement shows -$399.96**
